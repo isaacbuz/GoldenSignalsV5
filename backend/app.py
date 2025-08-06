@@ -124,7 +124,7 @@ async def detailed_health_check():
     return health_status
 
 # Import routers
-from api.routes import rag, mcp, market_data, signals, agents, auth, ai_analysis, chart_analysis, options_flow, universal_data, meta_consensus, ml_training, gamma_exposure, market_regime, smart_execution, liquidity_prediction, risk_management, volatility, unified_dashboard, alerts, ml, government_data
+from api.routes import rag, mcp, market_data, signals, agents, auth, ai_analysis, chart_analysis, options_flow, universal_data, meta_consensus, ml_training, gamma_exposure, market_regime, smart_execution, liquidity_prediction, risk_management, volatility, unified_dashboard, alerts, ml, government_data, alternative_data
 from api.websocket import market_ws
 
 # Include routers
@@ -151,6 +151,7 @@ app.include_router(unified_dashboard.router, prefix="/api/v1")  # Unified Tradin
 app.include_router(alerts.router)  # Alert Management System (uses its own prefix)
 app.include_router(ml.router)  # Machine Learning Pipeline (uses its own prefix)
 app.include_router(government_data.router)  # Government Economic Data APIs
+app.include_router(alternative_data.router)  # Alternative Data Sources (News, Social, Weather, Commodities)
 
 # Include WebSocket routers
 app.include_router(market_ws.router)  # Market data WebSocket endpoints

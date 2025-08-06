@@ -176,8 +176,64 @@ class EnhancedDataAggregator:
         self,
         indicators: List[str] = None
     ) -> List[EconomicIndicator]:
-        """Get economic indicators from FRED and other sources"""
+        """Get economic indicators from government data service and other sources"""
         
+        economic_data = []
+        
+        # Use the new government data service for comprehensive data
+        try:
+            from services.government_data_service import government_data_service
+            
+            # Get comprehensive government data
+            gov_data = await government_data_service.get_comprehensive_economic_data()
+            
+            if gov_data:
+                # Convert FRED indicators to EconomicIndicator format
+                fred_indicators = gov_data.get('fred_indicators', {})
+                for name, data in fred_indicators.items():
+                    if data and 'value' in data:
+                        economic_data.append(EconomicIndicator(
+                            indicator=name.upper().replace('_', ''),
+                            value=data['value'],
+                            previous_value=data['value'] - data.get('change', 0),
+                            timestamp=datetime.strptime(data['date'], '%Y-%m-%d') if 'date' in data else datetime.utcnow(),
+                            source='FRED',
+                            impact='high' if name in ['fed_funds_rate', 'unemployment_rate', 'cpi'] else 'medium',
+                            forecast=None
+                        ))
+                
+                # Add Treasury yields
+                treasury_yields = gov_data.get('treasury_yields', {})
+                for maturity, yield_data in treasury_yields.items():
+                    economic_data.append(EconomicIndicator(
+                        indicator=f'TREASURY_{maturity}',
+                        value=yield_data.yield_value,
+                        previous_value=yield_data.yield_value - yield_data.change_daily,
+                        timestamp=yield_data.date,
+                        source='Treasury',
+                        impact='high' if maturity in ['10Y', '2Y'] else 'medium',
+                        forecast=None
+                    ))
+                
+                # Add BLS data
+                labor_stats = gov_data.get('labor_statistics', {})
+                for metric, stat in labor_stats.items():
+                    economic_data.append(EconomicIndicator(
+                        indicator=metric.upper().replace('_', ''),
+                        value=stat.value,
+                        previous_value=stat.value - stat.year_over_year_change,
+                        timestamp=stat.date,
+                        source='BLS',
+                        impact='high' if 'unemployment' in metric or 'cpi' in metric else 'medium',
+                        forecast=None
+                    ))
+                    
+                return economic_data
+                    
+        except Exception as e:
+            logger.warning(f"Could not use government data service: {e}")
+        
+        # Fallback to original implementation if service unavailable
         if not indicators:
             indicators = [
                 'DGS10',      # 10-Year Treasury Rate
@@ -190,9 +246,7 @@ class EnhancedDataAggregator:
                 'GOLDAMGBD228NLBM', # Gold Price
             ]
             
-        economic_data = []
-        
-        # FRED API
+        # FRED API fallback
         if self.api_keys.get('fred'):
             for indicator in indicators:
                 try:
@@ -202,7 +256,7 @@ class EnhancedDataAggregator:
                 except Exception as e:
                     logger.error(f"Error fetching {indicator}: {e}")
                     
-        # US Treasury Data
+        # US Treasury Data fallback
         treasury_data = await self._get_treasury_data()
         if treasury_data:
             economic_data.extend(treasury_data)
