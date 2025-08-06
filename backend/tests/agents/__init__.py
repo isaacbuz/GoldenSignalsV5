@@ -1,1 +1,1 @@
-# Test package for agent modules
+# Tests for trading agents

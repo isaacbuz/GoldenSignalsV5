@@ -1,1 +1,1 @@
-# Test package for service modules
+# Tests for backend services
