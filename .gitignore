@@ -22,12 +22,17 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# Environment variables
+# Environment variables - NEVER commit these!
 .env
+.env.*
+!.env.template
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+*/.env
+*/.env.*
+!*/.env.template
 
 # Virtual environments
 venv/

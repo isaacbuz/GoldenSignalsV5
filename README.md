@@ -4,7 +4,33 @@ A modern AI-powered trading platform built with clean architecture principles, f
 
 ## 🚀 Quick Start
 
+### 📋 Prerequisites
+- Python 3.11+
+- Node.js 18+
+- PostgreSQL or SQLite
+
+### ⚙️ Environment Setup
+
+**IMPORTANT**: Set up your environment variables before running:
+
 ```bash
+# 1. Copy the environment template
+cp backend/.env.template backend/.env
+
+# 2. Edit backend/.env with your actual values
+# Generate secure keys using:
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+
+# 3. Add your API keys for market data providers
+```
+
+### 🚀 Run the Application
+
+```bash
+# Install dependencies
+cd backend && pip install -r requirements.txt
+cd frontend && npm install
+
 # Start the application
 ./start.sh
 
