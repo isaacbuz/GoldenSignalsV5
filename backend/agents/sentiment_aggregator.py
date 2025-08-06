@@ -9,7 +9,7 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 import numpy as np
 
-from agents.base import BaseAgent, AgentContext, AgentCapability
+from agents.base import BaseAgent, AgentContext, AgentCapability, AgentConfig
 from services.social_sentiment_analyzer import social_sentiment_analyzer
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ class SentimentAggregatorAgent(BaseAgent):
     """Agent that aggregates sentiment from multiple social media platforms"""
     
     def __init__(self):
-        super().__init__(
+        config = AgentConfig(
             name="SentimentAggregator",
             capabilities=[
                 AgentCapability.SENTIMENT_ANALYSIS,
@@ -27,6 +27,7 @@ class SentimentAggregatorAgent(BaseAgent):
             ],
             confidence_threshold=0.6
         )
+        super().__init__(config)
         
         # Platform weights based on reliability and relevance
         self.platform_weights = {
@@ -46,6 +47,10 @@ class SentimentAggregatorAgent(BaseAgent):
             'STRONG_SELL': -0.3
         }
         
+    def get_required_data_types(self) -> List[str]:
+        """Returns list of required data types for this agent"""
+        return ['social_media', 'news', 'sentiment']
+    
     async def analyze(self, context: AgentContext) -> Dict[str, Any]:
         """Analyze sentiment across all platforms"""
         

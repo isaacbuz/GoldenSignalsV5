@@ -1,239 +1,83 @@
 """
-Centralized Error Handling
-Custom exceptions and error handlers for the application
+Legacy Error Handling - DEPRECATED
+Use core.exceptions for new error handling patterns
 """
 
 from typing import Any, Dict, Optional, Union
-from fastapi import HTTPException, Request, status
+from fastapi import Request, status
 from fastapi.responses import JSONResponse
 from datetime import datetime
-import traceback
 
-from core.logging import get_logger
+# Re-export from the new exceptions module for backward compatibility
+from core.exceptions import (
+    BaseGoldenSignalsException as BaseAPIException,
+    ErrorCode,
+    ErrorContext,
+    MarketDataException,
+    AgentException,
+    TradingException,
+    SystemException,
+    error_handler,
+    handle_errors,
+    global_exception_handler,
+    raise_market_data_error,
+    raise_agent_error,
+    raise_trading_error,
+    raise_system_error
+)
 
-logger = get_logger(__name__)
-
-
-class BaseAPIException(HTTPException):
-    """Base exception for all API errors"""
-    
-    def __init__(
-        self,
-        status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
-        detail: str = "Internal server error",
-        error_code: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None
-    ):
-        super().__init__(status_code=status_code, detail=detail)
-        self.error_code = error_code or self.__class__.__name__
-        self.context = context or {}
-        self.timestamp = datetime.utcnow()
-
-
+# Legacy exception classes for backward compatibility
 class ValidationError(BaseAPIException):
-    """Raised when input validation fails"""
-    
-    def __init__(self, detail: str, field: Optional[str] = None):
-        context = {"field": field} if field else {}
-        super().__init__(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=detail,
-            error_code="VALIDATION_ERROR",
-            context=context
-        )
+    """Legacy validation error - use core.exceptions"""
+    def __init__(self, detail: str, field: str = None):
+        context = ErrorContext(metadata={"field": field} if field else None)
+        super().__init__(detail, ErrorCode.VALIDATION_ERROR, context, recoverable=True)
 
 
 class NotFoundError(BaseAPIException):
-    """Raised when a resource is not found"""
-    
+    """Legacy not found error - use core.exceptions"""
     def __init__(self, resource: str, identifier: Union[str, int]):
-        super().__init__(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"{resource} not found",
-            error_code="NOT_FOUND",
-            context={"resource": resource, "identifier": str(identifier)}
-        )
+        context = ErrorContext(metadata={"resource": resource, "identifier": str(identifier)})
+        super().__init__(f"{resource} not found: {identifier}", ErrorCode.NOT_FOUND, context)
 
 
-class AuthenticationError(BaseAPIException):
-    """Raised when authentication fails"""
-    
-    def __init__(self, detail: str = "Authentication failed"):
-        super().__init__(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=detail,
-            error_code="AUTHENTICATION_ERROR"
-        )
-
-
-class AuthorizationError(BaseAPIException):
-    """Raised when user lacks permission"""
-    
-    def __init__(self, detail: str = "Permission denied"):
-        super().__init__(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=detail,
-            error_code="AUTHORIZATION_ERROR"
-        )
-
-
-class RateLimitError(BaseAPIException):
-    """Raised when rate limit is exceeded"""
-    
-    def __init__(self, retry_after: int = 60):
-        super().__init__(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Rate limit exceeded",
-            error_code="RATE_LIMIT_EXCEEDED",
-            context={"retry_after": retry_after}
-        )
-
-
-class ServiceUnavailableError(BaseAPIException):
-    """Raised when a service is temporarily unavailable"""
-    
-    def __init__(self, service: str, detail: Optional[str] = None):
-        super().__init__(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=detail or f"{service} is temporarily unavailable",
-            error_code="SERVICE_UNAVAILABLE",
-            context={"service": service}
-        )
-
-
-class MarketDataError(BaseAPIException):
-    """Raised when market data operations fail"""
-    
-    def __init__(self, detail: str, symbol: Optional[str] = None):
-        context = {"symbol": symbol} if symbol else {}
-        super().__init__(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=detail,
-            error_code="MARKET_DATA_ERROR",
-            context=context
-        )
-
-
-class SignalGenerationError(BaseAPIException):
-    """Raised when signal generation fails"""
-    
-    def __init__(self, detail: str, agent: Optional[str] = None):
-        context = {"agent": agent} if agent else {}
-        super().__init__(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=detail,
-            error_code="SIGNAL_GENERATION_ERROR",
-            context=context
-        )
-
-
-class DatabaseError(BaseAPIException):
-    """Raised when database operations fail"""
-    
-    def __init__(self, detail: str, operation: Optional[str] = None):
-        context = {"operation": operation} if operation else {}
-        super().__init__(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=detail,
-            error_code="DATABASE_ERROR",
-            context=context
-        )
-
-
-async def api_exception_handler(request: Request, exc: BaseAPIException) -> JSONResponse:
-    """Handle API exceptions with consistent format"""
-    error_id = f"ERR-{exc.timestamp.strftime('%Y%m%d%H%M%S')}-{exc.error_code}"
-    
-    # Log the error
-    logger.error(
-        f"API Error {error_id}: {exc.detail}",
-        extra={
-            "error_code": exc.error_code,
-            "status_code": exc.status_code,
-            "context": exc.context,
-            "path": request.url.path,
-            "method": request.method
-        }
-    )
-    
-    # Return formatted error response
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={
-            "error": {
-                "id": error_id,
-                "code": exc.error_code,
-                "message": exc.detail,
-                "context": exc.context,
-                "timestamp": exc.timestamp.isoformat(),
-                "path": request.url.path
-            }
-        }
-    )
-
-
-async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    """Handle unexpected exceptions"""
-    error_id = f"ERR-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-INTERNAL"
-    
-    # Log the full exception
-    logger.error(
-        f"Unhandled Exception {error_id}",
-        exc_info=True,
-        extra={
-            "path": request.url.path,
-            "method": request.method
-        }
-    )
-    
-    # In production, hide internal error details
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={
-            "error": {
-                "id": error_id,
-                "code": "INTERNAL_ERROR",
-                "message": "An unexpected error occurred",
-                "timestamp": datetime.utcnow().isoformat(),
-                "path": request.url.path
-            }
-        }
-    )
-
-
-async def validation_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    """Handle validation exceptions from Pydantic"""
-    errors = []
-    
-    if hasattr(exc, 'errors'):
-        for error in exc.errors():
-            errors.append({
-                "field": ".".join(str(loc) for loc in error["loc"]),
-                "message": error["msg"],
-                "type": error["type"]
-            })
-    
-    return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={
-            "error": {
-                "code": "VALIDATION_ERROR",
-                "message": "Request validation failed",
-                "errors": errors,
-                "timestamp": datetime.utcnow().isoformat(),
-                "path": request.url.path
-            }
-        }
-    )
-
-
+# Legacy setup function - now uses new exception handler
 def setup_exception_handlers(app):
-    """Setup exception handlers for the FastAPI app"""
-    from fastapi.exceptions import RequestValidationError
+    """Setup global exception handlers for FastAPI"""
+    from core.logging import get_logger
     
-    # Custom exception handlers
-    app.add_exception_handler(BaseAPIException, api_exception_handler)
-    app.add_exception_handler(RequestValidationError, validation_exception_handler)
-    app.add_exception_handler(Exception, generic_exception_handler)
+    logger = get_logger(__name__)
+    logger.info("Exception handlers configured using new standardized system")
     
-    logger.info("Exception handlers configured")
+    # Use the new global exception handler
+    app.add_exception_handler(Exception, global_exception_handler)
+    
+    # Import here to avoid circular imports
+    from core.exceptions import BaseGoldenSignalsException
+    
+    # Custom handler for BaseGoldenSignalsException
+    @app.exception_handler(BaseGoldenSignalsException)
+    async def goldensignals_exception_handler(request: Request, exc: BaseGoldenSignalsException):
+        """Handler for standardized GoldenSignals exceptions"""
+        
+        # Map error codes to HTTP status codes
+        status_code_mapping = {
+            ErrorCode.NOT_FOUND: 404,
+            ErrorCode.AUTHENTICATION_ERROR: 401,
+            ErrorCode.AUTHORIZATION_ERROR: 403,
+            ErrorCode.VALIDATION_ERROR: 422,
+            ErrorCode.CONFLICT: 409,
+            ErrorCode.RATE_LIMITED: 429,
+            ErrorCode.MARKET_DATA_UNAVAILABLE: 503,
+            ErrorCode.AGENT_EXECUTION_ERROR: 500,
+            ErrorCode.TRADING_ERROR: 400,
+            ErrorCode.DATABASE_ERROR: 503,
+            ErrorCode.SERVICE_UNAVAILABLE: 503,
+        }
+        
+        http_status = status_code_mapping.get(exc.error_code, 500)
+        
+        return JSONResponse(
+            status_code=http_status,
+            content=exc.to_dict()
+        )

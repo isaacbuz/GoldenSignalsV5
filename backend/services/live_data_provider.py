@@ -9,7 +9,6 @@ import json
 import logging
 from typing import Dict, List, Optional, Any
 from datetime import datetime
-import os
 from dataclasses import dataclass
 import yfinance as yf
 import pandas as pd

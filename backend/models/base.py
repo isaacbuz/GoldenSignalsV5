@@ -5,8 +5,7 @@ Base database model with common fields and configurations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, String
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, DateTime, String, Integer
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 
@@ -19,9 +18,9 @@ class BaseModel(Base):
     __abstract__ = True
 
     id = Column(
-        UUID(as_uuid=True),
+        Integer,
         primary_key=True,
-        default=uuid.uuid4,
+        autoincrement=True,
         unique=True,
         nullable=False,
         index=True,

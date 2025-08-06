@@ -9,7 +9,7 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 import numpy as np
 
-from agents.base import BaseAgent, AgentContext, AgentCapability
+from agents.base import BaseAgent, AgentContext, AgentCapability, AgentConfig, Signal, SignalAction, SignalStrength
 from services.enhanced_data_aggregator import enhanced_data_aggregator, EconomicIndicator
 
 logger = logging.getLogger(__name__)
@@ -18,15 +18,13 @@ logger = logging.getLogger(__name__)
 class EconomicIndicatorAgent(BaseAgent):
     """Agent that analyzes economic indicators and their market impact"""
     
-    def __init__(self):
-        super().__init__(
-            name="EconomicIndicator",
-            capabilities=[
-                AgentCapability.FUNDAMENTAL_ANALYSIS,
-                AgentCapability.RISK_ASSESSMENT
-            ],
-            confidence_threshold=0.7
-        )
+    def __init__(self, config: AgentConfig = None):
+        if config is None:
+            config = AgentConfig(
+                name="EconomicIndicator",
+                confidence_threshold=0.7
+            )
+        super().__init__(config)
         
         # Economic indicator impacts on different sectors
         self.indicator_impacts = {
@@ -130,7 +128,7 @@ class EconomicIndicatorAgent(BaseAgent):
             }
         }
         
-    async def analyze(self, context: AgentContext) -> Dict[str, Any]:
+    async def analyze(self, market_data: Dict[str, Any]) -> Optional[Signal]:
         """Analyze economic indicators and their market impact"""
         
         try:
@@ -139,11 +137,9 @@ class EconomicIndicatorAgent(BaseAgent):
             
             if not indicators:
                 logger.warning("No economic indicators available")
-                return {
-                    'signal': 'NEUTRAL',
-                    'confidence': 0.0,
-                    'error': 'No economic data available'
-                }
+                return None
+                
+            symbol = market_data.get('symbol', 'UNKNOWN')
                 
             # Analyze each indicator
             indicator_analysis = self._analyze_indicators(indicators)
@@ -161,33 +157,68 @@ class EconomicIndicatorAgent(BaseAgent):
             market_signal = self._generate_market_signal(
                 indicator_analysis,
                 regime,
-                context.symbol
+                symbol
             )
             
             # Calculate confidence
             confidence = self._calculate_confidence(indicator_analysis, regime)
             
-            return {
-                'signal': market_signal['action'],
-                'confidence': confidence,
-                'market_regime': regime,
-                'economic_outlook': market_signal['outlook'],
-                'sector_recommendations': sector_recommendations,
-                'key_indicators': self._get_key_indicators(indicator_analysis),
-                'risks': self._identify_risks(indicator_analysis, regime),
-                'metadata': {
+            # Determine signal strength
+            if confidence > 0.8:
+                strength = SignalStrength.STRONG
+            elif confidence > 0.6:
+                strength = SignalStrength.MODERATE
+            else:
+                strength = SignalStrength.WEAK
+                
+            # Convert action string to SignalAction enum
+            action_map = {
+                'STRONG_BUY': SignalAction.BUY,
+                'BUY': SignalAction.BUY,
+                'SELL': SignalAction.SELL,
+                'STRONG_SELL': SignalAction.SELL,
+                'NEUTRAL': SignalAction.HOLD
+            }
+            
+            action = action_map.get(market_signal['action'], SignalAction.HOLD)
+            current_price = market_data.get('price', 0.0)
+            
+            # Generate reasoning
+            reasoning = [
+                f"Market regime: {regime}",
+                f"Economic outlook: {market_signal['outlook']}",
+                f"Key indicators analyzed: {len(indicators)}"
+            ]
+            
+            # Add top risks
+            risks = self._identify_risks(indicator_analysis, regime)
+            if risks:
+                reasoning.extend([f"Risk: {risk}" for risk in risks[:2]])
+            
+            return Signal(
+                symbol=symbol,
+                action=action,
+                confidence=confidence,
+                strength=strength,
+                source=self.config.name,
+                current_price=current_price,
+                reasoning=reasoning,
+                features={
+                    'market_regime': regime,
+                    'economic_outlook': market_signal['outlook'],
+                    'sector_recommendations': sector_recommendations,
+                    'key_indicators': self._get_key_indicators(indicator_analysis),
+                    'risks': risks
+                },
+                market_conditions={
                     'indicators_analyzed': len(indicators),
                     'data_quality': self._assess_data_quality(indicators)
                 }
-            }
+            )
             
         except Exception as e:
             logger.error(f"Economic analysis error: {e}")
-            return {
-                'signal': 'NEUTRAL',
-                'confidence': 0.0,
-                'error': str(e)
-            }
+            return None
             
     def _analyze_indicators(
         self, 
@@ -592,6 +623,18 @@ class EconomicIndicatorAgent(BaseAgent):
             risks.append(regime_risks[regime])
             
         return risks
+    
+    def get_required_data_types(self) -> List[str]:
+        """
+        Returns list of required data types for economic indicator analysis
+        
+        Returns:
+            List of data type strings
+        """
+        return [
+            'economic_indicators',  # Primary requirement - economic data like GDP, inflation, unemployment
+            'symbol'  # Basic symbol requirement
+        ]
         
     def _assess_data_quality(
         self,

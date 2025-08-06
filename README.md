@@ -1,4 +1,4 @@
-# GoldenSignalsAI - Clean Architecture
+# GoldenSignalsAI V5 - AI-Powered Trading Platform
 
 A modern AI-powered trading platform built with clean architecture principles, featuring RAG (Retrieval-Augmented Generation), MCP (Model Context Protocol), and autonomous trading agents.
 
@@ -18,23 +18,32 @@ A modern AI-powered trading platform built with clean architecture principles, f
 ## 📁 Project Structure
 
 ```
-GoldenSignalsAI_Clean/
+GoldenSignalsAI_V5/
 ├── backend/                 # FastAPI backend
-│   ├── api/                # API routes (RAG, MCP)
-│   ├── core/              # Core configuration
-│   ├── services/          # Business logic
-│   │   ├── rag/          # RAG implementation
-│   │   ├── mcp/          # MCP server
-│   │   └── orchestrator.py # Central orchestrator
-│   ├── models/            # Data models
-│   └── app.py            # Main application
-├── frontend/              # React frontend
-│   └── src/              # Source code
-├── agents/               # Trading agents
-├── tests/                # Test suite
-├── scripts/              # Utility scripts
+│   ├── api/                # API routes and WebSocket endpoints
+│   ├── agents/            # Trading agents and orchestrator
+│   ├── core/              # Core configuration and dependencies
+│   ├── services/          # Business logic services
+│   ├── models/            # SQLAlchemy data models
+│   ├── tests/             # Comprehensive test suite
+│   │   ├── agents/        # Agent framework tests
+│   │   ├── agents_tests/  # Specific agent tests
+│   │   ├── api/           # API endpoint tests
+│   │   ├── services/      # Service layer tests
+│   │   ├── ml_tests/      # ML model tests
+│   │   ├── websocket_tests/ # WebSocket tests
+│   │   └── integration/   # Integration tests
+│   ├── scripts/           # Maintenance and utility scripts
+│   ├── logs/              # Application logs
+│   └── app.py            # Main FastAPI application
+├── frontend/              # React TypeScript frontend
+│   └── src/              # Source code with professional layout
+├── docs/                  # Consolidated documentation
+│   ├── backend/          # Backend documentation
+│   ├── project-planning/ # Project planning documents
+│   └── README.md         # Documentation index
 ├── config/               # Configuration files
-└── docs/                 # Documentation
+└── scripts/              # Build and deployment scripts
 ```
 
 ## 📚 Documentation
@@ -68,6 +77,27 @@ All documentation is in the `docs/` folder:
 - Authentication
 
 See [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md) for full details.
+
+## 🧪 Testing
+
+The project includes a comprehensive test suite organized by functionality:
+
+```bash
+# Run all tests
+cd backend && python run_tests.py
+
+# Run specific test categories
+pytest tests/agents_tests/     # Agent tests
+pytest tests/api_tests/        # API tests
+pytest tests/services_tests/   # Service tests
+pytest tests/ml_tests/         # ML model tests
+pytest tests/websocket_tests/  # WebSocket tests
+
+# Run with coverage
+pytest --cov=. --cov-report=html
+```
+
+See **[backend/tests/README.md](backend/tests/README.md)** for detailed testing documentation.
 
 ## 🛠️ For Developers
 

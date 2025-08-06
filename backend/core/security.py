@@ -189,3 +189,27 @@ def verify_api_key(api_key: str, db: Session) -> Optional[User]:
     if user and user.is_active:
         return user
     return None
+
+
+async def get_current_user_ws(token: str) -> Optional[User]:
+    """Get current user from WebSocket token"""
+    try:
+        # Verify the token
+        payload = verify_token(token)
+        username = payload.get("sub")
+        if not username:
+            return None
+        
+        # Get user from database
+        from core.database import get_db
+        db = next(get_db())
+        try:
+            user = db.query(User).filter(User.username == username).first()
+            if user and user.is_active:
+                return user
+        finally:
+            db.close()
+    except Exception:
+        return None
+    
+    return None

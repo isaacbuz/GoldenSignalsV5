@@ -15,10 +15,10 @@ from redis import asyncio as aioredis
 from core.database import get_db
 from core.config import settings
 from core.logging import get_logger
-from services.market_data_service import MarketDataService
+from services.market_data_unified import unified_market_service as MarketDataService
 from services.signal_service import SignalService
 from services.websocket_manager import WebSocketManager
-from agents.orchestrator import AgentOrchestrator
+from core.orchestrator import unified_orchestrator as AgentOrchestrator
 from rag.core import RAGEngine
 from mcp.servers.market_data import MarketDataMCPServer
 from mcp.client import MCPClient

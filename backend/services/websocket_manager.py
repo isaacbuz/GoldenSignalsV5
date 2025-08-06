@@ -91,9 +91,9 @@ class WebSocketManager:
                 loop.create_task(self._heartbeat_loop())
                 loop.create_task(self._message_processor())
                 self._background_tasks_started = True
-            except RuntimeError:
+            except RuntimeError as e:
                 # No event loop running yet, tasks will be started on first connection
-                pass
+                logger.debug(f"No event loop running, background tasks will start on first connection: {e}")
 
     async def connect(
         self, websocket: WebSocket, client_metadata: Optional[Dict[str, Any]] = None

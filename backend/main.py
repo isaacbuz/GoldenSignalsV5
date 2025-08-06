@@ -1,18 +1,16 @@
 """
-GoldenSignalsAI V3 - Application Entry Point
+GoldenSignalsAI V5 - Application Entry Point
 
 This is the main entry point for the GoldenSignalsAI trading platform.
-The actual FastAPI application is implemented in src/main.py
+The actual FastAPI application is implemented in app.py
 """
 
 import os
 import sys
 import logging
 
-# Add src directory to Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
-
-from src.main import app
+# Import the FastAPI app
+from app import app
 
 # Configure basic logging for the entry point
 logging.basicConfig(

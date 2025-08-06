@@ -12,7 +12,7 @@ import numpy as np
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 
-from agents.base import BaseAgent, Signal, SignalAction, SignalStrength, AgentContext
+from agents.base import BaseAgent, Signal, SignalAction, SignalStrength, AgentContext, AgentConfig
 from core.logging import get_logger
 from services.enhanced_data_aggregator import enhanced_data_aggregator
 
@@ -36,19 +36,13 @@ class FinGPTAgent(BaseAgent):
     - Supports 34+ data sources
     """
     
-    def __init__(self):
-        super().__init__(
-            name="FinGPT",
-            capabilities=[
-                "sentiment_analysis",
-                "market_forecasting",
-                "technical_analysis", 
-                "risk_assessment",
-                "news_analysis",
-                "social_media_analysis"
-            ],
-            confidence_threshold=0.75
-        )
+    def __init__(self, config: AgentConfig = None):
+        if config is None:
+            config = AgentConfig(
+                name="FinGPT",
+                confidence_threshold=0.75
+            )
+        super().__init__(config)
         
         # Model configuration
         self.model_name = "FinGPT/fingpt-sentiment_llama3-8b"  # Best performing variant
@@ -108,7 +102,7 @@ class FinGPTAgent(BaseAgent):
             self.initialized = False
             logger.warning("Running in mock mode - install transformers and model for production")
     
-    async def analyze(self, context: AgentContext) -> Dict[str, Any]:
+    async def analyze(self, market_data: Dict[str, Any]) -> Optional[Signal]:
         """
         Perform comprehensive analysis using FinGPT
         
@@ -120,8 +114,13 @@ class FinGPTAgent(BaseAgent):
             return await self._mock_analysis(context)
         
         try:
-            # Gather all data sources
-            market_data = context.market_data
+            # Create context from market data for compatibility
+            context = AgentContext(
+                symbol=market_data.get('symbol', 'UNKNOWN'),
+                market_data=market_data,
+                indicators=market_data.get('indicators', {})
+            )
+            
             symbol = market_data.get('symbol', 'UNKNOWN')
             
             # Get sentiment from multiple sources
@@ -150,38 +149,16 @@ class FinGPTAgent(BaseAgent):
                 technical_signal,
                 price_prediction,
                 risk_analysis,
-                confidence
+                confidence,
+                symbol,
+                market_data.get('price', 0.0)
             )
             
-            return {
-                'signal': signal.action.value,
-                'confidence': confidence,
-                'predicted_price': price_prediction.get('target_price'),
-                'prediction_timeframe': price_prediction.get('timeframe', '1d'),
-                'sentiment': sentiment_score,
-                'technical': technical_signal,
-                'risk': risk_analysis,
-                'reasoning': self._generate_reasoning(
-                    sentiment_score,
-                    technical_signal,
-                    price_prediction,
-                    risk_analysis
-                ),
-                'feature_importance': {
-                    'sentiment_weight': 0.3,
-                    'technical_weight': 0.4,
-                    'forecast_weight': 0.2,
-                    'risk_weight': 0.1
-                }
-            }
+            return signal
             
         except Exception as e:
             logger.error(f"FinGPT analysis error: {e}")
-            return {
-                'signal': 'HOLD',
-                'confidence': 0.0,
-                'error': str(e)
-            }
+            return None
     
     async def _analyze_sentiment(self, context: AgentContext) -> Dict[str, Any]:
         """Analyze sentiment from news and social media"""
@@ -416,7 +393,7 @@ class FinGPTAgent(BaseAgent):
         
         return min(confidence, 0.95)  # Cap at 95%
     
-    def _generate_signal(self, sentiment, technical, forecast, risk, confidence) -> Signal:
+    def _generate_signal(self, sentiment, technical, forecast, risk, confidence, symbol, current_price) -> Signal:
         """Generate final trading signal"""
         
         # Determine action based on analyses
@@ -473,12 +450,26 @@ class FinGPTAgent(BaseAgent):
         
         # Create signal
         return Signal(
-            symbol=self.current_symbol,
+            symbol=symbol,
             action=action,
             confidence=confidence,
             strength=strength,
-            source="FinGPT",
-            reasoning=self._generate_reasoning(sentiment, technical, forecast, risk)
+            source=self.config.name,
+            current_price=current_price,
+            target_price=forecast.get('target_price'),
+            reasoning=self._generate_reasoning(sentiment, technical, forecast, risk),
+            features={
+                'sentiment': sentiment,
+                'technical': technical,
+                'forecast': forecast,
+                'risk': risk,
+                'feature_importance': {
+                    'sentiment_weight': 0.3,
+                    'technical_weight': 0.4,
+                    'forecast_weight': 0.2,
+                    'risk_weight': 0.1
+                }
+            }
         )
     
     def _generate_reasoning(self, sentiment, technical, forecast, risk) -> List[str]:
@@ -512,6 +503,21 @@ class FinGPTAgent(BaseAgent):
         )
         
         return reasoning
+    
+    def get_required_data_types(self) -> List[str]:
+        """
+        Returns list of required data types for FinGPT analysis
+        
+        Returns:
+            List of data type strings
+        """
+        return [
+            'price',       # Current price
+            'volume',      # Trading volume
+            'indicators',  # Technical indicators
+            'news',        # News sentiment data
+            'social_media' # Social media sentiment data
+        ]
     
     async def _mock_analysis(self, context: AgentContext) -> Dict[str, Any]:
         """Mock analysis for development when model not loaded"""

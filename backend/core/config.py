@@ -17,13 +17,13 @@ class Settings(BaseSettings):
     
     # Application
     APP_NAME: str = "GoldenSignalsAI"
-    VERSION: str = "1.0.0"
+    VERSION: str = "5.0.0"
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
     SECRET_KEY: str = "your-secret-key-here-minimum-32-chars"
     
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://goldensignals:goldensignals_pass@localhost/goldensignals"
+    DATABASE_URL: str = "sqlite:///./goldensignals.db"
     DATABASE_POOL_SIZE: int = 10
     DATABASE_POOL_RECYCLE: int = 300
     
@@ -145,5 +145,10 @@ def validate_settings():
         print(f"⚠️  Configuration warnings: {'; '.join(errors)}")
 
 
+def get_settings() -> Settings:
+    """Get application settings instance"""
+    return settings
+
+
 # Export commonly used settings
-__all__ = ["settings", "validate_settings"]
+__all__ = ["settings", "validate_settings", "get_settings"]

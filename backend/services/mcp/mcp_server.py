@@ -65,15 +65,50 @@ class MarketDataTool(MCPTool):
         symbol = params.get("symbol")
         timeframe = params.get("timeframe", "1d")
         
-        # TODO: Implement actual market data fetching
-        return {
-            "symbol": symbol,
-            "price": 150.25,
-            "change": 2.5,
-            "volume": 1000000,
-            "timeframe": timeframe,
-            "timestamp": datetime.now().isoformat()
-        }
+        try:
+            # Import market data service here to avoid circular imports
+            from services.live_data_provider import LiveDataProvider
+            
+            provider = LiveDataProvider()
+            data = await provider.get_current_price(symbol)
+            
+            if data:
+                return {
+                    "symbol": symbol,
+                    "price": data.get("price", 0.0),
+                    "change": data.get("change", 0.0),
+                    "change_percent": data.get("change_percent", 0.0),
+                    "volume": data.get("volume", 0),
+                    "timeframe": timeframe,
+                    "timestamp": datetime.now().isoformat(),
+                    "status": "success"
+                }
+            else:
+                # Fallback to mock data if real data unavailable
+                return {
+                    "symbol": symbol,
+                    "price": 150.25,
+                    "change": 2.5,
+                    "change_percent": 1.69,
+                    "volume": 1000000,
+                    "timeframe": timeframe,
+                    "timestamp": datetime.now().isoformat(),
+                    "status": "mock_data"
+                }
+        except Exception as e:
+            logger.error(f"Market data fetch failed for {symbol}: {e}")
+            # Return mock data on error
+            return {
+                "symbol": symbol,
+                "price": 150.25,
+                "change": 2.5,
+                "change_percent": 1.69,
+                "volume": 1000000,
+                "timeframe": timeframe,
+                "timestamp": datetime.now().isoformat(),
+                "status": "error_fallback",
+                "error": str(e)
+            }
 
 class TradingSignalTool(MCPTool):
     """Tool for generating trading signals"""
@@ -90,18 +125,64 @@ class TradingSignalTool(MCPTool):
         """Generate trading signal"""
         symbol = params.get("symbol")
         strategy = params.get("strategy", "momentum")
+        timeframe = params.get("timeframe", "1d")
         
-        # TODO: Implement actual signal generation
-        return {
-            "symbol": symbol,
-            "signal": "BUY",
-            "confidence": 0.85,
-            "strategy": strategy,
-            "entry_price": 150.00,
-            "stop_loss": 145.00,
-            "take_profit": 160.00,
-            "timestamp": datetime.now().isoformat()
-        }
+        try:
+            # Import signal service here to avoid circular imports
+            from services.ai_signal_generator import AISignalGenerator
+            
+            generator = AISignalGenerator()
+            signal_data = await generator.generate_signal(
+                symbol=symbol,
+                strategy=strategy,
+                timeframe=timeframe
+            )
+            
+            if signal_data:
+                return {
+                    "symbol": symbol,
+                    "signal": signal_data.get("action", "HOLD"),
+                    "confidence": signal_data.get("confidence", 0.5),
+                    "strategy": strategy,
+                    "entry_price": signal_data.get("price", 0.0),
+                    "stop_loss": signal_data.get("stop_loss"),
+                    "take_profit": signal_data.get("target_price"),
+                    "reasoning": signal_data.get("reasoning", ""),
+                    "risk_level": signal_data.get("risk_level", "MEDIUM"),
+                    "timestamp": datetime.now().isoformat(),
+                    "status": "success"
+                }
+            else:
+                # Fallback signal
+                return {
+                    "symbol": symbol,
+                    "signal": "HOLD",
+                    "confidence": 0.5,
+                    "strategy": strategy,
+                    "entry_price": 150.00,
+                    "stop_loss": 145.00,
+                    "take_profit": 160.00,
+                    "reasoning": "Insufficient data for signal generation",
+                    "risk_level": "MEDIUM",
+                    "timestamp": datetime.now().isoformat(),
+                    "status": "fallback"
+                }
+        except Exception as e:
+            logger.error(f"Signal generation failed for {symbol}: {e}")
+            return {
+                "symbol": symbol,
+                "signal": "HOLD",
+                "confidence": 0.0,
+                "strategy": strategy,
+                "entry_price": 0.0,
+                "stop_loss": None,
+                "take_profit": None,
+                "reasoning": f"Signal generation error: {str(e)}",
+                "risk_level": "HIGH",
+                "timestamp": datetime.now().isoformat(),
+                "status": "error",
+                "error": str(e)
+            }
 
 class PortfolioAnalysisTool(MCPTool):
     """Tool for portfolio analysis"""
@@ -117,18 +198,99 @@ class PortfolioAnalysisTool(MCPTool):
     async def execute(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """Analyze portfolio"""
         positions = params.get("positions", [])
+        user_id = params.get("user_id")
         
-        # TODO: Implement actual portfolio analysis
-        return {
-            "total_value": 100000,
-            "daily_pnl": 2500,
-            "risk_score": 0.65,
-            "recommendations": [
-                "Rebalance tech sector allocation",
-                "Consider hedging positions"
-            ],
-            "timestamp": datetime.now().isoformat()
-        }
+        try:
+            # Import portfolio service here to avoid circular imports
+            from core.portfolio_optimizer import PortfolioOptimizer
+            
+            optimizer = PortfolioOptimizer()
+            
+            if positions:
+                analysis = await optimizer.analyze_portfolio(positions)
+            elif user_id:
+                # Get user portfolio from database
+                from models.portfolio import Portfolio
+                from core.database import get_session
+                
+                async with get_session() as session:
+                    portfolio = await session.query(Portfolio).filter(
+                        Portfolio.user_id == user_id
+                    ).first()
+                    
+                    if portfolio:
+                        analysis = {
+                            "total_value": portfolio.total_value,
+                            "cash_balance": portfolio.current_balance,
+                            "daily_pnl": portfolio.daily_pnl,
+                            "total_pnl": portfolio.total_pnl,
+                            "total_pnl_percentage": portfolio.total_pnl_percentage,
+                            "max_drawdown": portfolio.max_drawdown,
+                            "sharpe_ratio": portfolio.sharpe_ratio,
+                            "volatility": portfolio.volatility,
+                            "win_rate": portfolio.win_rate,
+                            "total_trades": portfolio.total_trades
+                        }
+                    else:
+                        analysis = None
+            else:
+                analysis = None
+            
+            if analysis:
+                # Calculate risk score
+                risk_score = min(1.0, max(0.0, 
+                    0.3 * (analysis.get("volatility", 0.5)) +
+                    0.3 * (1 - analysis.get("sharpe_ratio", 0.5)) +
+                    0.4 * (analysis.get("max_drawdown", 0.0) / 100)
+                ))
+                
+                # Generate recommendations
+                recommendations = []
+                if analysis.get("volatility", 0) > 0.3:
+                    recommendations.append("High volatility detected - consider risk reduction")
+                if analysis.get("sharpe_ratio", 0) < 0.5:
+                    recommendations.append("Low risk-adjusted returns - review strategy")
+                if analysis.get("max_drawdown", 0) > 15:
+                    recommendations.append("Significant drawdown - implement better stop losses")
+                
+                return {
+                    "total_value": analysis.get("total_value", 0),
+                    "daily_pnl": analysis.get("daily_pnl", 0),
+                    "total_pnl": analysis.get("total_pnl", 0),
+                    "total_pnl_percentage": analysis.get("total_pnl_percentage", 0),
+                    "risk_score": risk_score,
+                    "volatility": analysis.get("volatility", 0),
+                    "sharpe_ratio": analysis.get("sharpe_ratio", 0),
+                    "max_drawdown": analysis.get("max_drawdown", 0),
+                    "win_rate": analysis.get("win_rate", 0),
+                    "total_trades": analysis.get("total_trades", 0),
+                    "recommendations": recommendations,
+                    "timestamp": datetime.now().isoformat(),
+                    "status": "success"
+                }
+            else:
+                # Default analysis for empty portfolio
+                return {
+                    "total_value": 0,
+                    "daily_pnl": 0,
+                    "total_pnl": 0,
+                    "risk_score": 0.0,
+                    "recommendations": ["Start by adding positions to your portfolio"],
+                    "timestamp": datetime.now().isoformat(),
+                    "status": "empty_portfolio"
+                }
+                
+        except Exception as e:
+            logger.error(f"Portfolio analysis failed: {e}")
+            return {
+                "total_value": 0,
+                "daily_pnl": 0,
+                "risk_score": 0.0,
+                "recommendations": ["Error analyzing portfolio"],
+                "timestamp": datetime.now().isoformat(),
+                "status": "error",
+                "error": str(e)
+            }
 
 class MCPServer:
     """Main MCP server implementation"""

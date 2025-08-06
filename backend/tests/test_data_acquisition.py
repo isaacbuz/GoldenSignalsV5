@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
 
-from services.market_data_service import MarketDataService
+# from services.market_data_service import MarketDataService  # TODO: Update to unified service
 from services.live_data_provider import LiveDataProvider
 from services.enhanced_data_aggregator import EnhancedDataAggregator
 from models.market_data import LiveQuote

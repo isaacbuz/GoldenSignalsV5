@@ -10,7 +10,7 @@ import json
 import logging
 from datetime import datetime
 
-from services.market_data_service import market_data_service
+from services.market_data_unified import unified_market_service
 from services.websocket_manager import WebSocketManager
 
 logger = logging.getLogger(__name__)
@@ -88,7 +88,7 @@ async def send_price_updates(websocket: WebSocket, client_id: str):
                 
             for symbol in subscriptions[client_id]:
                 # Get latest quote
-                quote = await market_data_service.get_quote(symbol)
+                quote = await unified_market_service.get_quote(symbol)
                 
                 if quote:
                     # Send price update

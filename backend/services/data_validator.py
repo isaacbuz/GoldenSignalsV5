@@ -88,7 +88,8 @@ class DataValidator:
                     value = str(data[field]).replace(',', '').replace('$', '')
                     sanitized[field] = float(value)
                 except (TypeError, ValueError):
-                    pass
+                    # Skip invalid price values
+                    continue
         
         # Volume - handle formatted numbers
         if "volume" in data and data["volume"] is not None:
@@ -106,7 +107,8 @@ class DataValidator:
                     value = str(data[field]).replace('%', '')
                     sanitized[field] = float(value)
                 except (TypeError, ValueError):
-                    pass
+                    # Skip invalid price values
+                    continue
         
         # Timestamp
         if "timestamp" not in data or data["timestamp"] is None:

@@ -18,7 +18,7 @@ from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 import logging
 
 from core.logging import get_logger
-from services.market_data_service import MarketDataService
+from services.market_data_unified import unified_market_service as MarketDataService
 
 logger = get_logger(__name__)
 
@@ -418,8 +418,17 @@ class LSTMPredictor:
         
         logger.info(f"Prediction accuracy for {symbol}: {accuracy:.2%}")
         
-        # TODO: Implement online learning / model update logic
-        # This could trigger retraining if accuracy drops below threshold
+        # Online learning: trigger retraining if accuracy drops
+        if accuracy < 0.8:  # 80% accuracy threshold
+            logger.warning(f"Model accuracy {accuracy:.2%} below threshold. Triggering retrain.")
+            # Schedule background retraining (would be implemented by orchestrator)
+            from core.events.bus import event_bus
+            await event_bus.emit("model_retrain_needed", {
+                "model": "lstm_predictor",
+                "symbol": symbol,
+                "current_accuracy": accuracy,
+                "threshold": 0.8
+            })
 
 
 # Create singleton instance

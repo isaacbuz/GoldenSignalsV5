@@ -140,38 +140,4 @@ class Order(Base):
         return f"<Order {self.symbol} {self.side} {self.quantity} @ {self.status.value}>"
 
 
-class Portfolio(Base):
-    __tablename__ = "portfolios"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), unique=True, index=True)
-    
-    # Portfolio metrics
-    total_value = Column(Float, default=0.0)
-    cash_balance = Column(Float, default=10000.0)
-    invested_value = Column(Float, default=0.0)
-    
-    # Performance metrics
-    total_return = Column(Float, default=0.0)
-    daily_return = Column(Float, default=0.0)
-    sharpe_ratio = Column(Float)
-    max_drawdown = Column(Float)
-    win_rate = Column(Float)
-    
-    # Risk metrics
-    portfolio_beta = Column(Float)
-    portfolio_volatility = Column(Float)
-    value_at_risk = Column(Float)  # VaR
-    
-    # Timestamps
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
-    # Snapshot of holdings
-    holdings_snapshot = Column(JSON)  # Current holdings as JSON
-    
-    # Relationships
-    user = relationship("User", backref="portfolio", uselist=False)
-    
-    def __repr__(self):
-        return f"<Portfolio user_id={self.user_id} value={self.total_value}>"
+# Portfolio class moved to models.portfolio to avoid conflicts

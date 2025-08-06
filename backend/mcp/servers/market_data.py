@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 import random
 
 from mcp.servers.base import BaseMCPServer, MCPTool, MCPResource, ToolType
-from services.market_data_service import MarketDataService
+from services.market_data_unified import unified_market_service as MarketDataService
 from core.logging import get_logger
 
 logger = get_logger(__name__)

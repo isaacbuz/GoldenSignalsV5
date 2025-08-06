@@ -96,9 +96,9 @@ class Signal(BaseModel):
     likes = Column(Integer, default=0, nullable=False)
     shares = Column(Integer, default=0, nullable=False)
 
-    # Relationships - commented out until User model is created
-    # user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
-    # user = relationship("User", back_populates="signals")
+    # Relationships
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    user = relationship("User", back_populates="signals")
 
     # Indexes for better query performance
     __table_args__ = (

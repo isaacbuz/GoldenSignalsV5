@@ -4,8 +4,8 @@ Provides consistent logging across the application
 """
 
 import logging
-import sys
 import json
+import sys
 from datetime import datetime
 from typing import Any, Dict, Optional
 from pythonjsonlogger import jsonlogger

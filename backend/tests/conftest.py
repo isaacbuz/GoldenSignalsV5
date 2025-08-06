@@ -4,14 +4,14 @@ Pytest configuration and fixtures for GoldenSignalsAI testing
 
 import pytest
 import asyncio
+import sys
+import os
 from typing import Generator, AsyncGenerator
 from unittest.mock import MagicMock, AsyncMock
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-import os
-import sys
 
 # Add backend to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

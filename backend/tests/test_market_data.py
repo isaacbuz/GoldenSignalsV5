@@ -1,13 +1,32 @@
 """
 Tests for market data endpoints
+Enhanced with comprehensive tests for V2 market data system
 """
 
 import pytest
 from fastapi.testclient import TestClient
 from app import app
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, Mock, AsyncMock
 import pandas as pd
-from datetime import datetime
+import numpy as np
+from datetime import datetime, timedelta
+import asyncio
+
+# Import market data components for testing
+from core.market_data.base import (
+    MarketDataContext,
+    MarketDataResponse,
+    DataQuality,
+    DataProviderType,
+    ProviderConfig,
+    ProviderStatus,
+    market_data_registry
+)
+from services.market_data_aggregator import (
+    MarketDataAggregator,
+    DataStrategy,
+    DataAnomalyDetector
+)
 
 client = TestClient(app)
 

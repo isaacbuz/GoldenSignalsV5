@@ -8,10 +8,7 @@ from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
-# TODO: Fix imports after resolving circular dependencies
-# from services.rag.rag_system import RAGSystem
-# from services.orchestrator import orchestrator
-orchestrator = None  # Temporary placeholder
+from services.rag_service import rag_service
 
 router = APIRouter(prefix="/rag", tags=["RAG"])
 
@@ -53,26 +50,44 @@ async def query_rag_system(request: RAGQuery):
     - Historical patterns
     """
     try:
-        # Check if orchestrator is available
-        if not orchestrator:
-            raise HTTPException(status_code=503, detail="RAG system not available")
-            
-        # Get RAG system from orchestrator
-        rag_system = orchestrator.rag_system
-        
-        # Process query
-        insights = await rag_system.process_query(request.query)
-        
-        # Format response
-        response = RAGResponse(
+        # Query the RAG service
+        results = await rag_service.query(
             query=request.query,
-            analysis=insights.get("analysis", ""),
-            recommendation=insights.get("recommendation", "HOLD"),
-            risk_factors=insights.get("risk_factors", []),
-            confidence=insights.get("confidence", 0.5),
-            sources=insights.get("sources", []),
-            timestamp=insights.get("timestamp", datetime.now().isoformat())
+            k=request.max_results,
+            filters=request.filters,
+            use_llm=True
         )
+        
+        if not results:
+            raise HTTPException(status_code=404, detail="No relevant information found")
+        
+        # Extract the generated response and sources
+        if results and "response" in results[0]:
+            # LLM-generated response
+            response_text = results[0]["response"]
+            sources = results[0].get("sources", [])
+            
+            # Simple analysis extraction (could be enhanced with NLP)
+            response = RAGResponse(
+                query=request.query,
+                analysis=response_text,
+                recommendation="HOLD",  # Default, could parse from response
+                risk_factors=["Market volatility", "Limited data availability"],
+                confidence=0.7,  # Default confidence
+                sources=[source.get("id", "unknown") for source in sources],
+                timestamp=datetime.now().isoformat()
+            )
+        else:
+            # Fallback response from raw documents
+            response = RAGResponse(
+                query=request.query,
+                analysis=f"Found {len(results)} relevant documents related to your query.",
+                recommendation="HOLD",
+                risk_factors=["Insufficient analysis data"],
+                confidence=0.5,
+                sources=[result.get("id", "unknown") for result in results],
+                timestamp=datetime.now().isoformat()
+            )
         
         return response
         
@@ -91,22 +106,27 @@ async def ingest_documents(request: RAGIngestionRequest):
     - Historical data
     """
     try:
-        # Prepare documents
+        # Prepare documents for RAG service
         documents_data = []
         for doc in request.documents:
             doc_data = {
                 "id": doc.id or f"doc_{datetime.now().timestamp()}",
                 "content": doc.content,
-                "metadata": doc.metadata
+                "metadata": doc.metadata,
+                "source": doc.metadata.get("source", "user_input"),
+                "document_type": doc.metadata.get("document_type", "general")
             }
             documents_data.append(doc_data)
             
         # Ingest into RAG system
-        await orchestrator.rag_system.ingest_market_data(documents_data)
+        ingested_count = await rag_service.ingest_documents(
+            documents_data, 
+            collection_name="market_intelligence"
+        )
         
         return {
             "status": "success",
-            "documents_ingested": len(documents_data),
+            "documents_ingested": ingested_count,
             "timestamp": datetime.now().isoformat()
         }
         
@@ -117,12 +137,12 @@ async def ingest_documents(request: RAGIngestionRequest):
 async def get_rag_status():
     """Get RAG system status"""
     try:
-        vector_store = orchestrator.rag_system.vector_store
+        # Get metrics from RAG service
+        metrics = rag_service.get_metrics()
         
         return {
             "status": "active",
-            "documents_count": len(vector_store.documents),
-            "last_query": None,  # TODO: Track last query
+            "metrics": metrics,
             "timestamp": datetime.now().isoformat()
         }
         

@@ -21,6 +21,30 @@ from services.signal_service import SignalService
 logger = get_logger(__name__)
 
 
+class AgentCapability(str, Enum):
+    """Agent capability types"""
+    TECHNICAL_ANALYSIS = "technical_analysis"
+    FUNDAMENTAL_ANALYSIS = "fundamental_analysis"
+    SENTIMENT_ANALYSIS = "sentiment_analysis"
+    SOCIAL_MEDIA_MONITORING = "social_media_monitoring"
+    NEWS_ANALYSIS = "news_analysis"
+    OPTIONS_ANALYSIS = "options_analysis"
+    VOLATILITY_ANALYSIS = "volatility_analysis"
+    RISK_MANAGEMENT = "risk_management"
+    PATTERN_RECOGNITION = "pattern_recognition"
+    MARKET_REGIME_DETECTION = "market_regime_detection"
+
+
+class AgentContext(BaseModel):
+    """Context information passed to agents"""
+    symbol: str
+    timeframe: str = "1d"
+    market_data: Dict[str, Any] = Field(default_factory=dict)
+    indicators: Dict[str, Any] = Field(default_factory=dict)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+
 class SignalStrength(str, Enum):
     """Signal strength levels"""
     STRONG = "STRONG"
@@ -154,7 +178,7 @@ class BaseAgent(ABC):
         Returns:
             Signal: Trading signal with confidence and metadata, or None
         """
-        pass
+        raise NotImplementedError("Subclasses must implement analyze_market_data")
     
     @abstractmethod
     def get_required_data_types(self) -> List[str]:
@@ -164,7 +188,7 @@ class BaseAgent(ABC):
         Returns:
             List of data type strings (e.g., ['price', 'volume', 'indicators'])
         """
-        pass
+        raise NotImplementedError("Subclasses must implement get_required_data_types")
     
     async def execute_with_monitoring(self, market_data: Dict[str, Any]) -> Optional[Signal]:
         """

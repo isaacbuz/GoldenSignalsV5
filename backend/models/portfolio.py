@@ -79,9 +79,9 @@ class Portfolio(BaseModel):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
-    # Relationships - commented out until User model is created
-    # user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
-    # user = relationship("User", back_populates="portfolios")
+    # Relationships
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    user = relationship("User", back_populates="portfolios")
 
     def __repr__(self):
         return f"<Portfolio(name={self.name}, value=${self.total_value:.2f}, pnl={self.total_pnl_percentage:.2f}%)>"

@@ -7,8 +7,8 @@ from typing import Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from agents.orchestrator import AgentOrchestrator
-from services.market_data_service import MarketDataService
+from core.orchestrator import unified_orchestrator as AgentOrchestrator
+from services.market_data_unified import unified_market_service as MarketDataService
 from services.signal_service import SignalService
 from core.database import get_db
 from core.logging import get_logger

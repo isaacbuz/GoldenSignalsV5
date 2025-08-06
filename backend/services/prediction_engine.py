@@ -20,7 +20,7 @@ from statsmodels.tsa.arima.model import ARIMA
 from scipy import stats
 import json
 
-from services.market_data_service import MarketDataService
+from services.market_data_unified import unified_market_service as MarketDataService
 from rag.core.engine import RAGEngine
 from agents.orchestrator import AgentOrchestrator
 

@@ -1,11 +1,10 @@
+
+import sys
+from alembic import context
 from logging.config import fileConfig
+from pathlib import Path
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-from alembic import context
-import os
-import sys
-from pathlib import Path
-
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 
@@ -15,10 +14,10 @@ from models.base import Base
 # Import all models to ensure they're registered
 from models.user import User
 from models.market_data import Stock, PriceData, TechnicalIndicators, MarketSnapshot
-from models.trading import TradingSignal, Position, Order, Portfolio
+from models.trading import TradingSignal, Position, Order
 from models.signal import Signal
 from models.agent import Agent
-from models.portfolio import PortfolioHistory
+from models.portfolio import Portfolio
 
 # this is the Alembic Config object
 config = context.config

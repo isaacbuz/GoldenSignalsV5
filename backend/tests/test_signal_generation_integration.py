@@ -12,7 +12,7 @@ import numpy as np
 
 from agents.orchestrator import AgentOrchestrator
 from services.signal_service import SignalService
-from services.market_data_service import MarketDataService
+# from services.market_data_service import MarketDataService  # TODO: Update to unified service
 from services.websocket_orchestrator import WebSocketOrchestrator
 from models.signal import Signal
 from agents.base import SignalAction

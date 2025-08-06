@@ -69,11 +69,13 @@ class SocialMediaPlatform:
         
     async def search_posts(self, query: str, limit: int = 100) -> List[Dict[str, Any]]:
         """Search for posts mentioning the query"""
-        raise NotImplementedError
+        logger.warning(f"{self.name} platform search not implemented")
+        return []
         
     async def get_trending_topics(self) -> List[str]:
         """Get trending topics related to finance/stocks"""
-        raise NotImplementedError
+        logger.warning(f"{self.name} platform trending topics not implemented")
+        return ["stocks", "trading", "investing", "market", "finance"]
 
 
 class TwitterPlatform(SocialMediaPlatform):
@@ -117,6 +119,44 @@ class TwitterPlatform(SocialMediaPlatform):
         except Exception as e:
             logger.error(f"Twitter search error: {e}")
             return []
+            
+    async def get_trending_topics(self) -> List[str]:
+        """Get trending finance topics from Twitter"""
+        if not self.client:
+            return []
+            
+        try:
+            # Get trends for finance-related hashtags
+            finance_keywords = [
+                '#stocks', '#trading', '#investing', '#options', 
+                '#crypto', '#forex', '#SPY', '#QQQ', '#bearish', '#bullish'
+            ]
+            
+            trending = []
+            for keyword in finance_keywords:
+                tweets = self.client.search_recent_tweets(
+                    query=f"{keyword} -is:retweet lang:en",
+                    max_results=10,
+                    tweet_fields=['public_metrics']
+                )
+                
+                if tweets and tweets.data:
+                    # Extract hashtags and mentions from tweets
+                    for tweet in tweets.data:
+                        # Simple hashtag extraction
+                        hashtags = re.findall(r'#\w+', tweet.text)
+                        mentions = re.findall(r'\$[A-Z]{1,5}\b', tweet.text)
+                        trending.extend(hashtags)
+                        trending.extend(mentions)
+            
+            # Return most common topics
+            from collections import Counter
+            most_common = Counter(trending).most_common(10)
+            return [topic[0] for topic in most_common]
+            
+        except Exception as e:
+            logger.error(f"Twitter trending topics error: {e}")
+            return ['#stocks', '#trading', '#SPY', '#QQQ']  # Fallback
 
 
 class RedditPlatform(SocialMediaPlatform):
@@ -174,6 +214,39 @@ class RedditPlatform(SocialMediaPlatform):
         except Exception as e:
             logger.error(f"Reddit search error: {e}")
             return []
+            
+    async def get_trending_topics(self) -> List[str]:
+        """Get trending finance topics from Reddit"""
+        if not self.reddit:
+            return []
+            
+        try:
+            trending_topics = []
+            finance_subreddits = ['wallstreetbets', 'stocks', 'investing', 'options', 'SecurityAnalysis']
+            
+            for subreddit_name in finance_subreddits:
+                subreddit = self.reddit.subreddit(subreddit_name)
+                
+                # Get hot posts from subreddit
+                hot_posts = subreddit.hot(limit=20)
+                
+                for submission in hot_posts:
+                    # Extract ticker mentions from title
+                    tickers = re.findall(r'\$?[A-Z]{1,5}\b', submission.title.upper())
+                    trending_topics.extend([f"${ticker}" for ticker in tickers if ticker.isalpha()])
+                    
+                    # Extract hashtags
+                    hashtags = re.findall(r'#\w+', submission.title)
+                    trending_topics.extend(hashtags)
+            
+            # Return most common topics
+            from collections import Counter
+            most_common = Counter(trending_topics).most_common(10)
+            return [topic[0] for topic in most_common if len(topic[0]) > 2]
+            
+        except Exception as e:
+            logger.error(f"Reddit trending topics error: {e}")
+            return ['$SPY', '$QQQ', '$TSLA', '$AAPL', '$MSFT']  # Fallback
 
 
 class DiscordPlatform(SocialMediaPlatform):
@@ -188,6 +261,12 @@ class DiscordPlatform(SocialMediaPlatform):
         # Note: This would require Discord bot implementation
         # For now, return empty - would need proper Discord bot setup
         return []
+        
+    async def get_trending_topics(self) -> List[str]:
+        """Get trending finance topics from Discord"""
+        # Discord would require bot implementation to access channels
+        # Return fallback topics for now
+        return ['$SPY', '$BTC', '$ETH', '$TSLA', '$NVDA', '$AAPL']
 
 
 class SocialSentimentAnalyzer:
@@ -363,16 +442,16 @@ class SocialSentimentAnalyzer:
                     model_sentiment = -result['score']
                     
                 confidence = result['score']
-            except:
-                pass
+            except Exception as e:
+                logger.debug(f"Error in FinBERT sentiment analysis: {e}")
                 
         elif self.sentiment_pipeline and len(content.split()) > 3:
             try:
                 blob = TextBlob(content)
                 model_sentiment = blob.sentiment.polarity
                 confidence = abs(model_sentiment)
-            except:
-                pass
+            except Exception as e:
+                logger.debug(f"Error in FinBERT sentiment analysis: {e}")
                 
         # Combine keyword and model sentiment
         final_sentiment = (keyword_sentiment * 0.4 + model_sentiment * 0.6)
