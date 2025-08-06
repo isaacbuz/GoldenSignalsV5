@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GoldenSignals AI - Professional Trading Platform</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      /* Loading screen styles */
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background-color: #0a0a0a;
+        color: #fff;
+        overflow: hidden;
+      }
+      
+      #loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #0a0a0a;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      }
+      
+      .loading-logo {
+        font-size: 28px;
+        font-weight: 700;
+        color: #FFD700;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+      
+      .loading-spinner {
+        width: 48px;
+        height: 48px;
+        border: 3px solid #1a1a1a;
+        border-top-color: #FFD700;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 16px;
+      }
+      
+      .loading-text {
+        font-size: 14px;
+        color: #666;
+        text-align: center;
+      }
+      
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      
+      /* Hide loading screen when React app loads */
+      .loaded #loading-screen {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" style="display: none;">
+      <div class="loading-logo">GoldenSignals AI</div>
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Loading professional trading platform...</div>
+    </div>
+    
+    <!-- React App Root -->
+    <div id="root"></div>
+    
+    <!-- Debug Script -->
+    <script>
+      console.log('🔥 HTML LOADED - JavaScript is working!');
+      window.addEventListener('DOMContentLoaded', () => {
+        console.log('🔥 DOM LOADED');
+        const root = document.getElementById('root');
+        if (root) {
+          root.innerHTML = '<div style="color: red; font-size: 24px; padding: 20px;">🔥 DOM MANIPULATION WORKS - React should load next</div>';
+        }
+      });
+    </script>
+    
+    <!-- React App Script -->
+    <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Hide loading screen when React mounts -->
+    <script>
+      // Hide loading screen once React app is mounted
+      const checkForReactApp = () => {
+        const root = document.getElementById('root');
+        if (root && root.children.length > 0) {
+          document.body.classList.add('loaded');
+        } else {
+          requestAnimationFrame(checkForReactApp);
+        }
+      };
+      requestAnimationFrame(checkForReactApp);
+    </script>
+  </body>
+</html>

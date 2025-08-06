@@ -1,0 +1,41 @@
+# Testing requirements for GoldenSignalsAI
+
+# Core testing framework
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+pytest-timeout==2.2.0
+pytest-xdist==3.5.0  # Parallel test execution
+
+# Test utilities
+faker==20.1.0  # Generate fake data
+factory-boy==3.3.0  # Test factories
+freezegun==1.2.2  # Time mocking
+responses==0.24.1  # HTTP mocking
+
+# Code quality
+black==23.11.0
+flake8==6.1.0
+mypy==1.7.1
+isort==5.12.0
+
+# Performance testing
+pytest-benchmark==4.0.0
+locust==2.17.0  # Load testing
+
+# WebSocket testing
+websockets==12.0
+websocket-client==1.6.4
+
+# Database testing
+pytest-postgresql==5.0.0
+sqlalchemy-utils==0.41.1
+
+# Documentation
+pytest-html==4.1.1
+pytest-json-report==1.5.0
+
+# Security testing
+bandit==1.7.5
+safety==2.3.5

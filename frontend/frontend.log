@@ -1,0 +1,27 @@
+
+> goldensignals-frontend@1.0.0 dev
+> vite
+
+Port 3000 is in use, trying another one...
+Port 3001 is in use, trying another one...
+
+  VITE v5.4.19  ready in 354 ms
+
+  ➜  Local:   http://localhost:3002/
+7:08:32 PM [vite] hmr update /src/components/charts/PredictiveAIChart.tsx
+7:08:55 PM [vite] hmr update /src/components/charts/PredictiveAIChart.tsx
+2:24:30 PM [vite] hmr update /src/components/charts/PredictiveAIChart.tsx
+2:24:42 PM [vite] hmr update /src/components/charts/PredictiveAIChart.tsx
+2:24:52 PM [vite] hmr update /src/components/charts/PredictiveAIChart.tsx
+2:28:51 PM [vite] hmr update /src/pages/GoldenSignalsAIDashboard.tsx
+2:28:57 PM [vite] hmr update /src/components/charts/PredictiveAIChart.tsx
+2:29:05 PM [vite] hmr update /src/components/charts/PredictiveAIChart.tsx
+2:29:13 PM [vite] hmr update /src/components/charts/PredictiveAIChart.tsx
+2:29:19 PM [vite] hmr update /src/components/charts/PredictiveAIChart.tsx
+2:29:28 PM [vite] hmr update /src/components/charts/PredictiveAIChart.tsx
+2:29:56 PM [vite] hmr update /src/pages/GoldenSignalsAIDashboard.tsx
+2:30:04 PM [vite] hmr update /src/pages/GoldenSignalsAIDashboard.tsx
+2:30:14 PM [vite] hmr update /src/pages/GoldenSignalsAIDashboard.tsx
+2:30:23 PM [vite] hmr update /src/components/charts/PredictiveAIChart.tsx
+2:30:34 PM [vite] hmr update /src/components/charts/PredictiveAIChart.tsx
+2:30:55 PM [vite] hmr update /src/components/charts/PredictiveAIChart.tsx

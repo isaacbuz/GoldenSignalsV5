@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Page</title>
+</head>
+<body>
+    <h1>Testing GoldenSignals AI</h1>
+    <div id="status"></div>
+    <script>
+        async function checkServices() {
+            const status = document.getElementById('status');
+            let html = '<h2>Service Status:</h2>';
+            
+            // Check frontend
+            try {
+                const frontendResponse = await fetch('/');
+                html += `<p>✅ Frontend: ${frontendResponse.status === 200 ? 'Running' : 'Error'}</p>`;
+            } catch (e) {
+                html += `<p>❌ Frontend: ${e.message}</p>`;
+            }
+            
+            // Check backend
+            try {
+                const backendResponse = await fetch('http://localhost:8000/api/v1/health');
+                const data = await backendResponse.json();
+                html += `<p>✅ Backend: ${data.status}</p>`;
+            } catch (e) {
+                html += `<p>❌ Backend: ${e.message}</p>`;
+            }
+            
+            // Check if React loaded
+            const root = document.getElementById('root');
+            if (window.location.pathname === '/' && root) {
+                html += `<p>React Root Element: ${root ? 'Found' : 'Not Found'}</p>`;
+            }
+            
+            status.innerHTML = html;
+        }
+        
+        checkServices();
+    </script>
+</body>
+</html>
